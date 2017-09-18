@@ -3,6 +3,9 @@ wheel_base: 1.53
 update_rate: 20
 steering_vel: [1.0, 3.0, 0.031416]
 steering_acc: 0.013963
-KP: 1.2
-KI: 1.0
-KD: 0.6
+# KP: 20.729
+# KI: 1.6
+# KD: 0.133
+KP: 45
+KI: 0.8
+KD: 0.3
