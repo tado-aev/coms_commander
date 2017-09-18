@@ -3,10 +3,15 @@
 /* Constructors, Destructor, and Assignment operators {{{ */
 ComsCommander::ComsCommander(const float steering_gear_ratio,
                              const float wheel_base,
-                             const float update_rate)
-    : steering_gear_ratio{steering_gear_ratio}
+                             const float update_rate,
+                             const std::vector<float>& steering_vel,
+                             const float cmd_ang_acc)
+    : first_twist_received{false}
+    , steering_gear_ratio{steering_gear_ratio}
     , wheel_base{wheel_base}
     , update_rate{update_rate}
+    , steering_vel{steering_vel}
+    , cmd_ang_acc{cmd_ang_acc}
     , is_ready{false}
 {
     ros::NodeHandle nh;
@@ -73,6 +78,7 @@ void
 ComsCommander::cmd_vel_callback(const geometry_msgs::Twist& cmd_vel) {
     std::lock_guard<std::mutex> lock{twist_mutex};
     target_twist = cmd_vel;
+    first_twist_received = true;
 }
 
 void
@@ -81,7 +87,7 @@ ComsCommander::velocity_control() {
     while (ros::ok()) {
         r.sleep();
 
-        if (!is_ready) {
+        if (!is_ready || !first_twist_received) {
             continue;
         }
 
@@ -97,12 +103,20 @@ ComsCommander::velocity_control() {
         this->err_i += err_p;
         auto err_d = err_p - prev_err_p;
         double cmd_percentage = KP * err_p + KI * err_i + KD * err_d;
+        // Limit to [-100, 100]
+        cmd_percentage = cmd_percentage > 100 ? 100 : cmd_percentage;
+        cmd_percentage = cmd_percentage < -100 ? -100 : cmd_percentage;
 
         coms_msgs::ComsGAB msg;
         msg.gear = "d";
-        msg.accel = cmd_percentage;
-        // TODO: programmatically determine brake
-        msg.brake = 0;
+        if (cmd_percentage > 0) {
+            msg.accel = cmd_percentage;
+            msg.brake = 0;
+        }
+        else {
+            msg.accel = 0;
+            msg.brake = -cmd_percentage;
+        }
         gab_pub.publish(msg);
     }
 }
@@ -117,26 +131,37 @@ ComsCommander::steering_control() {
             continue;
         }
 
-        // TODO: steering control, but would it be on receiving twist?
         twist_mutex.lock();
-        auto tgt_yaw = target_twist.angular.z;
+        auto tgt_omega = target_twist.angular.z;
         twist_mutex.unlock();
 
         odom_mutex.lock();
-        auto v_cur = get_speed(current_odom.twist.twist);
+        auto cur_vel = get_speed(current_odom.twist.twist);
         odom_mutex.unlock();
 
-        auto tire_deg = std::atan2(tgt_yaw * wheel_base, v_cur);
-        auto steering_deg = tire_deg * steering_gear_ratio;
+        if (cur_vel == 0) {
+            continue;
+        }
+
+        auto tire_ang = std::atan2(tgt_omega * wheel_base, cur_vel);
+        auto cmd_ang = tire_ang * steering_gear_ratio;
+        auto cmd_ang_vel = get_steering_speed(cur_vel, cmd_ang);
+        ROS_INFO_STREAM(180 / M_PI * tgt_omega);
+        ROS_INFO_STREAM("  " << 180 / M_PI * cmd_ang);
+        ROS_INFO_STREAM("  " << 180 / M_PI * cmd_ang_vel);
+        ROS_INFO_STREAM("  " << 180 / M_PI * cmd_ang_acc);
+
+        if (cmd_ang_vel == 0) {
+            continue;
+        }
 
         std_msgs::Float64MultiArray msg;
         // Position (rad)
-        msg.data.push_back(steering_deg);
+        msg.data.push_back(cmd_ang);
         // Velocity (rad/s)
-        // TODO: obviously, make these adjustable
-        msg.data.push_back(3.14159265358979324);
+        msg.data.push_back(cmd_ang_vel);
         // Acceleration (rad/s^2)
-        msg.data.push_back(0.69813170077777775);
+        msg.data.push_back(cmd_ang_acc);
         steer_pub.publish(msg);
     }
 }
@@ -149,4 +174,17 @@ ComsCommander::get_speed(const geometry_msgs::Twist& twist) {
     auto v_xy = std::sqrt(std::pow(v_x, 2) + std::pow(v_y, 2));
     auto v = std::sqrt(std::pow(v_xy, 2) + std::pow(v_z, 2));
     return static_cast<double>(v);
+}
+
+double
+ComsCommander::get_steering_speed(const double v_cur, const double cmd_ang) {
+    if (v_cur < steering_vel[0]) {
+        return 0;
+    }
+    if (v_cur > steering_vel[1]) {
+        return steering_vel[2];
+    }
+
+    auto slope = steering_vel[2] / (steering_vel[1] - steering_vel[0]);
+    return v_cur * slope;
 }

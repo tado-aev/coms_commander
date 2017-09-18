@@ -15,7 +15,9 @@ public:
     /* Constructors, Destructor, and Assignment operators {{{ */
     ComsCommander(const float steering_gear_ratio,
                   const float wheel_base,
-                  const float update_rate);
+                  const float update_rate,
+                  const std::vector<float>& steering_vel,
+                  const float cmd_ang_acc);
 
     // Copy constructor
     ComsCommander(const ComsCommander& other) = delete;
@@ -70,6 +72,8 @@ private:
     std::mutex odom_mutex;
     geometry_msgs::Twist target_twist;
     std::mutex twist_mutex;
+    /* Don't go into drive until first cmd_vel is received */
+    bool first_twist_received;
 
     std::thread velocity_thread;
     std::thread steering_thread;
@@ -78,6 +82,32 @@ private:
     float wheel_base;
     // Really, we should be using a mutex but oh well...
     float update_rate;
+
+    /**
+     * Angular velocity limit for turning the steering wheel
+     *
+     * We don't want to turn the steering wheel when at rest, nor do we want
+     * to turn it very fast when moving slowly. We create a linear
+     * relationship for the steering wheel angular velocity vs vehicle speed.
+     *
+     * The first element of steering_vel is the velocity, second is the
+     * angular velocity in rad/s.
+     *
+     * omega (rad/s)
+     * ^
+     * |       (steering_vel[1], steering_vel[2])
+     * |       v
+     * |       ------------
+     * |      /
+     * |     /
+     * |    /
+     * |___/
+     * +---------------------> v (m/s)
+     *     ^
+     *     steering_vel[0]
+     */
+    std::vector<float> steering_vel;
+    float cmd_ang_acc;
 
     // Ideally, use a mutex
     bool is_ready;
@@ -110,6 +140,16 @@ private:
      */
     double
     get_speed(const geometry_msgs::Twist& twist);
+
+    /**
+     * Returns the angular velocity to turn the steering wheel
+     *
+     * If current vehicle speed below steering_vel[0], angular velocity is
+     * calculated from the linear relationship of steering_vel. See the
+     * comments for steering_vel for more details.
+     */
+    double
+    get_steering_speed(const double v_cur, const double cmd_ang);
 };
 
 #endif /* end of include guard */
