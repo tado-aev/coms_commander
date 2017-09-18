@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="coms_commander" type="coms_commander_node" name="commander" >
+    <rosparam command="load" file="$(find coms_commander)/configs/coms.yaml" />
+  </node>
+</launch>

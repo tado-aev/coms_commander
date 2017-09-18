@@ -1,0 +1,6 @@
+steering_gear_ratio: 18
+wheel_base: 1.53
+update_rate: 20
+KP: 1.2
+KI: 1.0
+KD: 0.6
