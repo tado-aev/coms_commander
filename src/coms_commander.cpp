@@ -108,6 +108,7 @@ ComsCommander::velocity_control() {
         cmd_percentage = cmd_percentage < -100 ? -100 : cmd_percentage;
 
         coms_msgs::ComsGAB msg;
+        msg.program_mode = true;
         msg.gear = "d";
         if (cmd_percentage > 0) {
             msg.accel = cmd_percentage;
