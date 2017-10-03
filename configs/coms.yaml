@@ -8,5 +8,7 @@ steering_acc: 0.013963
 # KI: 1.6
 # KD: 0.133
 KP: 45
-KI: 0.8
-KD: 0.3
+# KI: 0.8
+# KD: 0.3
+KI: 0
+KD: 0

@@ -109,7 +109,12 @@ ComsCommander::velocity_control() {
 
         coms_msgs::ComsGAB msg;
         msg.program_mode = true;
-        msg.gear = "d";
+        if (target_twist.linear.x < 0) {
+            msg.gear = "r";
+        }
+        else {
+            msg.gear = "d";
+        }
         if (cmd_percentage > 0) {
             msg.accel = cmd_percentage;
             msg.brake = 0;
@@ -147,10 +152,6 @@ ComsCommander::steering_control() {
         auto tire_ang = std::atan2(tgt_omega * wheel_base, cur_vel);
         auto cmd_ang = tire_ang * steering_gear_ratio;
         auto cmd_ang_vel = get_steering_speed(cur_vel, cmd_ang);
-        ROS_INFO_STREAM(180 / M_PI * tgt_omega);
-        ROS_INFO_STREAM("  " << 180 / M_PI * cmd_ang);
-        ROS_INFO_STREAM("  " << 180 / M_PI * cmd_ang_vel);
-        ROS_INFO_STREAM("  " << 180 / M_PI * cmd_ang_acc);
 
         if (cmd_ang_vel == 0) {
             continue;
