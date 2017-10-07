@@ -103,9 +103,6 @@ ComsCommander::velocity_control() {
         this->err_i += err_p;
         auto err_d = err_p - prev_err_p;
         double cmd_percentage = KP * err_p + KI * err_i + KD * err_d;
-        // Limit to [-100, 100]
-        cmd_percentage = cmd_percentage > 100 ? 100 : cmd_percentage;
-        cmd_percentage = cmd_percentage < -100 ? -100 : cmd_percentage;
 
         coms_msgs::ComsGAB msg;
         msg.program_mode = true;
