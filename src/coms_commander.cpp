@@ -106,12 +106,22 @@ ComsCommander::velocity_control() {
 
         coms_msgs::ComsGAB msg;
         msg.program_mode = true;
+
+        if (target_twist.linear.x == 0) {
+            msg.gear = "n";
+            msg.accel = 0;
+            msg.brake = 100;
+            gab_pub.publish(msg);
+            return;
+        }
+
         if (target_twist.linear.x < 0) {
             msg.gear = "r";
         }
         else {
             msg.gear = "d";
         }
+
         if (cmd_percentage > 0) {
             msg.accel = cmd_percentage;
             msg.brake = 0;
