@@ -96,8 +96,9 @@ ComsCommander::velocity_control() {
         odom_mutex.unlock();
 
         twist_mutex.lock();
-        auto v_tgt = get_speed(target_twist);
+        auto tgt = target_twist;
         twist_mutex.unlock();
+        auto v_tgt = get_speed(tgt);
 
         auto err_p = v_tgt - v_cur;
         this->err_i += err_p;
@@ -107,15 +108,15 @@ ComsCommander::velocity_control() {
         coms_msgs::ComsGAB msg;
         msg.program_mode = true;
 
-        if (target_twist.linear.x == 0) {
+        if (tgt.linear.x == 0) {
             msg.gear = "n";
             msg.accel = 0;
             msg.brake = 100;
             gab_pub.publish(msg);
-            return;
+            continue;
         }
 
-        if (target_twist.linear.x < 0) {
+        if (tgt.linear.x < 0) {
             msg.gear = "r";
         }
         else {
