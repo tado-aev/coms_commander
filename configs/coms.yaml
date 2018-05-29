@@ -1,14 +1,9 @@
 steering_gear_ratio: 18
 wheel_base: 1.53
 update_rate: 5
-steering_vel: [0.01, 1.5, 0.031416]
-#steering_vel: [1.0, 5.0, 0.031416]
+steering_vel: [0.03, 0.7, 0.040841]
+# steering_vel: [0.03, 0.7, 0.031416]
 steering_acc: 0.013963
-# KP: 20.729
-# KI: 1.6
-# KD: 0.133
 KP: 45
-# KI: 0.8
-# KD: 0.3
-KI: 0
-KD: 0
+KI: 3
+KD: 5
