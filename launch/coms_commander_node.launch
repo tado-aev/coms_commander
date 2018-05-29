@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <launch>
   <node pkg="coms_commander" type="coms_commander_node" name="commander" >
+    <remap from="cmd_steer" to="steering/cmd_steer" />
+
     <rosparam command="load" file="$(find coms_commander)/configs/coms.yaml" />
   </node>
 </launch>
