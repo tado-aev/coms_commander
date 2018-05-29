@@ -16,7 +16,7 @@ ComsCommander::ComsCommander(const float steering_gear_ratio,
 {
     ros::NodeHandle nh;
     gab_pub = nh.advertise<coms_msgs::ComsGAB>("cmd_gab", 100);
-    steer_pub = nh.advertise<std_msgs::Float64MultiArray>("cmd_steer", 100);
+    steer_pub = nh.advertise<coms_msgs::Steering>("cmd_steer", 100);
     odom_sub = nh.subscribe("odom",
                             100,
                             &ComsCommander::odom_callback,
@@ -165,13 +165,13 @@ ComsCommander::steering_control() {
             continue;
         }
 
-        std_msgs::Float64MultiArray msg;
+        coms_msgs::Steering msg;
         // Position (rad)
-        msg.data.push_back(cmd_ang);
+        msg.pos = cmd_ang;
         // Velocity (rad/s)
-        msg.data.push_back(cmd_ang_vel);
+        msg.vel = cmd_ang_vel;
         // Acceleration (rad/s^2)
-        msg.data.push_back(cmd_ang_acc);
+        msg.acc = cmd_ang_acc;
         steer_pub.publish(msg);
     }
 }

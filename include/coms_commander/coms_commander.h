@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 #include <coms_msgs/ComsGAB.h>
-#include <std_msgs/Float64MultiArray.h>
+#include <coms_msgs/Steering.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 
